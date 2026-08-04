@@ -29,7 +29,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var healthWriter: HealthConnectWriter
     private lateinit var manualStepsInput: EditText
-    private lateinit var manualSleepInput: EditText
     private var syncType = ""
     
     private val requiredPermissions = setOf(
@@ -45,7 +44,6 @@ class MainActivity : AppCompatActivity() {
         statusText = findViewById(R.id.statusText)
         healthWriter = HealthConnectWriter(this)
         manualStepsInput = findViewById(R.id.manualStepsInput)
-        manualSleepInput = findViewById(R.id.manualSleepInput)
         
         setupWebView()
         
@@ -79,25 +77,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 } else {
                     Toast.makeText(this, "Ungültige Schrittzahl", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-        
-        findViewById<Button>(R.id.addManualSleepButton).setOnClickListener {
-            val sleepText = manualSleepInput.text.toString()
-            if (sleepText.isNotEmpty()) {
-                val minutes = sleepText.toIntOrNull()
-                if (minutes != null && minutes > 0) {
-                    lifecycleScope.launch {
-                        checkPermissions()
-                        healthWriter.writeManualSleep(minutes)
-                        runOnUiThread { 
-                            statusText.text = "😴 $minutes Min. Schlaf manuell hinzugefügt"
-                            manualSleepInput.text.clear()
-                        }
-                    }
-                } else {
-                    Toast.makeText(this, "Ungültige Minutenzahl", Toast.LENGTH_SHORT).show()
                 }
             }
         }
