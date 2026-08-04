@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.*
+import androidx.health.connect.client.units.Energy
+import androidx.health.connect.client.units.Percentage
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -45,9 +47,9 @@ class HealthConnectWriter(private val context: Context) {
             startZoneOffset = zoneOffset,
             endZoneOffset = zoneOffset
         )
-
         client.insertRecords(listOf(record))
         prefs.edit().putLong(todayKey, currentTotal).putLong("last_write_millis", now.toEpochMilli()).apply()
+
         Log.d("GarminBridge", "Delta $delta Schritte geschrieben")
     }
 
@@ -72,31 +74,31 @@ class HealthConnectWriter(private val context: Context) {
         var currentMillis = startInstant.toEpochMilli()
         
         if (sleepData.lightSleepMinutes > 0) {
-            val stageEnd = currentMillis + (sleepData.lightSleepMinutes * 60 * 1000)
+            val stageEnd = currentMillis + (sleepData.lightSleepMinutes * 60L * 1000L)
             stages.add(SleepSessionRecord.Stage(Instant.ofEpochMilli(currentMillis), Instant.ofEpochMilli(stageEnd), SleepSessionRecord.STAGE_TYPE_LIGHT))
             currentMillis = stageEnd
         }
         
         if (sleepData.deepSleepMinutes > 0) {
-            val stageEnd = currentMillis + (sleepData.deepSleepMinutes * 60 * 1000)
+            val stageEnd = currentMillis + (sleepData.deepSleepMinutes * 60L * 1000L)
             stages.add(SleepSessionRecord.Stage(Instant.ofEpochMilli(currentMillis), Instant.ofEpochMilli(stageEnd), SleepSessionRecord.STAGE_TYPE_DEEP))
             currentMillis = stageEnd
         }
         
         if (sleepData.remSleepMinutes > 0) {
-            val stageEnd = currentMillis + (sleepData.remSleepMinutes * 60 * 1000)
+            val stageEnd = currentMillis + (sleepData.remSleepMinutes * 60L * 1000L)
             stages.add(SleepSessionRecord.Stage(Instant.ofEpochMilli(currentMillis), Instant.ofEpochMilli(stageEnd), SleepSessionRecord.STAGE_TYPE_REM))
             currentMillis = stageEnd
         }
         
         if (sleepData.awakeMinutes > 0) {
-            val stageEnd = currentMillis + (sleepData.awakeMinutes * 60 * 1000)
+            val stageEnd = currentMillis + (sleepData.awakeMinutes * 60L * 1000L)
             stages.add(SleepSessionRecord.Stage(Instant.ofEpochMilli(currentMillis), Instant.ofEpochMilli(stageEnd), SleepSessionRecord.STAGE_TYPE_AWAKE))
         }
 
-        val record = SleepSessionRecord(
-            startTime = startInstant,
-            endTime = endInstant,            startZoneOffset = startOffset,
+        val record = SleepSessionRecord(            startTime = startInstant,
+            endTime = endInstant,
+            startZoneOffset = startOffset,
             endZoneOffset = endOffset,
             stages = stages
         )
@@ -122,21 +124,6 @@ class HealthConnectWriter(private val context: Context) {
         Log.d("GarminBridge", "Herzfrequenz geschrieben: ${data.restingHeartRate} bpm")
     }
 
-    suspend fun writeStress(data: StressData) {
-        val now = Instant.now()
-        val zone = ZoneId.systemDefault()
-        val zoneOffset = zone.rules.getOffset(now)
-
-        val record = StressRecord(
-            time = now,
-            zoneOffset = zoneOffset,
-            stressLevel = data.avgStress.toLong()
-        )
-
-        client.insertRecords(listOf(record))
-        Log.d("GarminBridge", "Stress geschrieben: ${data.avgStress}")
-    }
-
     suspend fun writeSpO2(data: SpO2Data) {
         val now = Instant.now()
         val zone = ZoneId.systemDefault()
@@ -145,7 +132,8 @@ class HealthConnectWriter(private val context: Context) {
         val record = OxygenSaturationRecord(
             time = now,
             zoneOffset = zoneOffset,
-            percentage = data.avgSpO2 / 100.0        )
+            percentage = Percentage.of(data.avgSpO2.toDouble() / 100.0)
+        )
 
         client.insertRecords(listOf(record))
         Log.d("GarminBridge", "SpO2 geschrieben: ${data.avgSpO2}%")
@@ -157,8 +145,7 @@ class HealthConnectWriter(private val context: Context) {
         val zoneOffset = zone.rules.getOffset(now)
 
         val record = RespiratoryRateRecord(
-            time = now,
-            zoneOffset = zoneOffset,
+            time = now,            zoneOffset = zoneOffset,
             rate = data.avgRespiration.toDouble()
         )
 
@@ -194,7 +181,8 @@ class HealthConnectWriter(private val context: Context) {
             return
         }
 
-        val now = Instant.now()        val zone = ZoneId.systemDefault()
+        val now = Instant.now()
+        val zone = ZoneId.systemDefault()
         val zoneOffset = zone.rules.getOffset(now)
 
         val lastWriteMillis = prefs.getLong("last_calories_write", now.toEpochMilli() - 3_600_000)
@@ -206,8 +194,7 @@ class HealthConnectWriter(private val context: Context) {
             endTime = now,
             startZoneOffset = zoneOffset,
             endZoneOffset = zoneOffset,
-            energy = delta.toDouble()
-        )
+            energy = Energy.kilocalories(delta.toDouble())        )
 
         client.insertRecords(listOf(record))
         prefs.edit().putLong(todayKey, data.totalCalories.toLong()).putLong("last_calories_write", now.toEpochMilli()).apply()
