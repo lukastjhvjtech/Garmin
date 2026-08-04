@@ -1,41 +1,32 @@
-```
-# Compiled and build artifacts
-*.class
-*.dex
-*.so
-*.aar
-*.apk
-*.jar
-*.o
-*.obj
-*.out
+```gitignore
+# Build artifacts
 build/
-.intermediates/
-.externalNativeBuild/
+dist/
 
 # Dependencies
-.gradle/
 node_modules/
-vendor/
+venv/
+.venv/
+__pycache__/
+*.egg-info/
 
-# Logs and temp files
-*.log
-*.tmp
+# IDE files
+.vscode/
+.idea/
 *.swp
+*.swo
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Editors
-.vscode/
-.idea/
-*.iml
-*.iws
-*.ipr
+# Logs and temp files
+*.log
+*.tmp
+*.bak
 
-# System files
+# OS files
 .DS_Store
 Thumbs.db
 
@@ -44,7 +35,23 @@ coverage/
 htmlcov/
 *.coverage
 
-# Android specific
-*.keystore
-local.properties
+# Compiled files
+*.pyc
+*.class
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Package manager caches
+.npm/
+.yarn/
+.pip/
+.mypy_cache/
+.pytest_cache/
+.gradle/
+target/
 ```
