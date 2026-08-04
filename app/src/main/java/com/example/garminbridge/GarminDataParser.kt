@@ -45,10 +45,9 @@ data class CaloriesData(
 )
 
 object GarminDataParser {
-
     private const val TAG = "GarminParser"
-    fun extractSteps(json: String): Long? {
-        return try {
+
+    fun extractSteps(json: String): Long? {        return try {
             val trimmed = json.trim()
             when {
                 trimmed.startsWith("{") -> parseStepsObject(JSONObject(trimmed))
@@ -76,7 +75,6 @@ object GarminDataParser {
         if (arr.length() == 0) return null
         var total = 0L
         var found = false
-
         for (i in 0 until arr.length()) {
             val obj = arr.optJSONObject(i) ?: continue
             if (obj.has("totalSteps")) {
@@ -96,46 +94,38 @@ object GarminDataParser {
                     }
                 }
             }
-        }        return if (found) total else null
+        }
+        return if (found) total else null
     }
-
     fun extractSleep(json: String): SleepData? {
         return try {
             val trimmed = json.trim()
             if (!trimmed.startsWith("{")) return null
-            
             val obj = JSONObject(trimmed)
-            
-            val totalSleep = obj.optLong("sleepingSeconds", 0) / 60
-            val deepSleep = obj.optLong("deepSleepSeconds", 0) / 60
-            val lightSleep = obj.optLong("lightSleepSeconds", 0) / 60
-            val remSleep = obj.optLong("remSleepSeconds", 0) / 60
-            val awakeTime = obj.optLong("awakeSeconds", 0) / 60
-            val altTotal = obj.optLong("totalSleepDuration", 0) / 60
-            
+            val totalSleep = obj.optLong("sleepingSeconds", 0) / 60L
+            val deepSleep = obj.optLong("deepSleepSeconds", 0) / 60L
+            val lightSleep = obj.optLong("lightSleepSeconds", 0) / 60L
+            val remSleep = obj.optLong("remSleepSeconds", 0) / 60L
+            val awakeTime = obj.optLong("awakeSeconds", 0) / 60L
+            val altTotal = obj.optLong("totalSleepDuration", 0) / 60L
             val finalTotal = if (totalSleep > 0) totalSleep else altTotal
-            
             if (finalTotal <= 0) return null
-            
             val sleepStartStr = obj.optString("sleepStartTimestampGMT", "")
             val sleepEndStr = obj.optString("sleepEndTimestampGMT", "")
-            
             var startMillis = System.currentTimeMillis() - (finalTotal * 60L * 1000L)
             var endMillis = System.currentTimeMillis()
-            
             try {
                 if (sleepStartStr.isNotEmpty() && sleepStartStr.all { it.isDigit() }) {
                     startMillis = sleepStartStr.toLong()
-                    if (startMillis < 1_000_000_000_000L) startMillis *= 1000L
+                    if (startMillis < 1000000000000L) startMillis *= 1000L
                 }
                 if (sleepEndStr.isNotEmpty() && sleepEndStr.all { it.isDigit() }) {
                     endMillis = sleepEndStr.toLong()
-                    if (endMillis < 1_000_000_000_000L) endMillis *= 1000L
+                    if (endMillis < 1000000000000L) endMillis *= 1000L
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Konnte Schlafenszeiten nicht parsen", e)
             }
-            
             SleepData(
                 totalSleepMinutes = finalTotal.toInt(),
                 sleepStartMillis = startMillis,
@@ -145,7 +135,8 @@ object GarminDataParser {
                 remSleepMinutes = remSleep.toInt(),
                 awakeMinutes = awakeTime.toInt()
             ).also { Log.d(TAG, "Schlaf: $it") }
-        } catch (e: Exception) {            Log.e(TAG, "Schlaf-Parse-Fehler", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Schlaf-Parse-Fehler", e)
             null
         }
     }
@@ -154,14 +145,10 @@ object GarminDataParser {
         return try {
             val trimmed = json.trim()
             if (!trimmed.startsWith("{")) return null
-            
-            val obj = JSONObject(trimmed)
-            val restingHR = obj.optInt("restingHeartRate", 0)
+            val obj = JSONObject(trimmed)            val restingHR = obj.optInt("restingHeartRate", 0)
             val avgHR = obj.optInt("avgHeartRate", restingHR)
             val maxHR = obj.optInt("maxHeartRate", avgHR)
-            
             if (restingHR <= 0 && avgHR <= 0) return null
-            
             HeartRateData(
                 restingHeartRate = if (restingHR > 0) restingHR else avgHR,
                 avgHeartRate = avgHR,
@@ -178,14 +165,11 @@ object GarminDataParser {
         return try {
             val trimmed = json.trim()
             if (!trimmed.startsWith("{")) return null
-            
             val obj = JSONObject(trimmed)
             val avg = obj.optDouble("averageSPO2", 0.0).toFloat()
             val min = obj.optDouble("lowestSPO2", avg.toDouble()).toFloat()
             val max = obj.optDouble("highestSPO2", avg.toDouble()).toFloat()
-            
             if (avg <= 0) return null
-            
             SpO2Data(
                 avgSpO2 = avg,
                 minSpO2 = min,
@@ -194,26 +178,23 @@ object GarminDataParser {
             ).also { Log.d(TAG, "SpO2: $it") }
         } catch (e: Exception) {
             Log.e(TAG, "SpO2-Parse-Fehler", e)
-            null        }
+            null
+        }
     }
 
     fun extractRespiration(json: String): RespirationData? {
         return try {
             val trimmed = json.trim()
             if (!trimmed.startsWith("{")) return null
-            
             val obj = JSONObject(trimmed)
             val avg = obj.optDouble("avgRespiration", 0.0).toFloat()
-            
             if (avg <= 0) return null
-            
             RespirationData(
                 avgRespiration = avg,
                 timestamp = System.currentTimeMillis()
             ).also { Log.d(TAG, "Atmung: $it") }
         } catch (e: Exception) {
-            Log.e(TAG, "Respiration-Parse-Fehler", e)
-            null
+            Log.e(TAG, "Respiration-Parse-Fehler", e)            null
         }
     }
 
@@ -221,12 +202,9 @@ object GarminDataParser {
         return try {
             val trimmed = json.trim()
             if (!trimmed.startsWith("{")) return null
-            
             val obj = JSONObject(trimmed)
             val floors = obj.optInt("floorsClimbed", obj.optInt("floorsAscended", 0))
-            
             if (floors <= 0) return null
-            
             FloorsData(
                 floorsClimbed = floors,
                 timestamp = System.currentTimeMillis()
@@ -241,12 +219,10 @@ object GarminDataParser {
         return try {
             val trimmed = json.trim()
             if (!trimmed.startsWith("{")) return null
-            
             val obj = JSONObject(trimmed)
-            val total = obj.optInt("totalKilocalories", obj.optInt("totalCalories", 0))            val active = obj.optInt("activeKilocalories", obj.optInt("activeCalories", 0))
-            
+            val total = obj.optInt("totalKilocalories", obj.optInt("totalCalories", 0))
+            val active = obj.optInt("activeKilocalories", obj.optInt("activeCalories", 0))
             if (total <= 0) return null
-            
             CaloriesData(
                 totalCalories = total,
                 activeCalories = active,
