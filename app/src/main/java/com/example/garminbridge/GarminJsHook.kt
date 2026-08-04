@@ -12,8 +12,15 @@ object GarminJsHook {
                 'usersummary-service/stats/steps',
                 'wellness-service/wellness/dailySummaryChart',
                 'wellness-service/wellness/dailySleepData',
+                'wellness-service/wellness/sleepDetails',
                 'wellness-service/wellness/dailyHeartRate',
-                'wellness-service/wellness/sleepDetails'
+                'wellness-service/wellness/dailyStress',
+                'wellness-service/wellness/daily/spo2',
+                'wellness-service/wellness/daily/respiration',
+                'wellness-service/wellness/floorsChartData/daily',
+                'wellness-service/wellness/daily/im',
+                'wellness-service/wellness/bodyBattery/reports/daily',
+                'wellness-service/wellness/bodyBattery/events'
             ];
 
             function isInteresting(url) {
