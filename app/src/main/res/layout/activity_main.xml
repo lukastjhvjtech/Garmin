@@ -30,6 +30,48 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="3. Schlaf syncen" />
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+        
+        <EditText
+            android:id="@+id/manualStepsInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="number"
+            android:hint="Schritte manuell" />
+        
+        <Button
+            android:id="@+id/addManualStepsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Addieren" />
+    </LinearLayout>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+        
+        <EditText
+            android:id="@+id/manualSleepInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:inputType="number"
+            android:hint="Schlaf (Minuten)" />
+        
+        <Button
+            android:id="@+id/addManualSleepButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Addieren" />
+    </LinearLayout>
 
     <WebView
         android:id="@+id/webView"

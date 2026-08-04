@@ -8,6 +8,7 @@ import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -20,11 +21,15 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.Instant
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var statusText: TextView
     private lateinit var healthWriter: HealthConnectWriter
+    private lateinit var manualStepsInput: EditText
+    private lateinit var manualSleepInput: EditText
     private var syncType = ""
     
     private val requiredPermissions = setOf(
@@ -39,6 +44,8 @@ class MainActivity : AppCompatActivity() {
         webView = findViewById(R.id.webView)
         statusText = findViewById(R.id.statusText)
         healthWriter = HealthConnectWriter(this)
+        manualStepsInput = findViewById(R.id.manualStepsInput)
+        manualSleepInput = findViewById(R.id.manualSleepInput)
         
         setupWebView()
         
@@ -47,13 +54,52 @@ class MainActivity : AppCompatActivity() {
             webView.loadUrl(GarminEndpoints.START_URL)
         }
         
-        findViewById<Button>(R.id.syncStepsButton).setOnClickListener {            syncType = "steps"
+        findViewById<Button>(R.id.syncStepsButton).setOnClickListener {
+            syncType = "steps"
             loadPage("daily")
         }
         
         findViewById<Button>(R.id.syncSleepButton).setOnClickListener {
             syncType = "sleep"
             loadPage("sleep")
+        }
+        
+        findViewById<Button>(R.id.addManualStepsButton).setOnClickListener {
+            val stepsText = manualStepsInput.text.toString()
+            if (stepsText.isNotEmpty()) {
+                val steps = stepsText.toLongOrNull()
+                if (steps != null && steps > 0) {
+                    lifecycleScope.launch {
+                        checkPermissions()
+                        healthWriter.writeSteps(steps)
+                        runOnUiThread { 
+                            statusText.text = "✅ $steps Schritte manuell hinzugefügt"
+                            manualStepsInput.text.clear()
+                        }
+                    }
+                } else {
+                    Toast.makeText(this, "Ungültige Schrittzahl", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        
+        findViewById<Button>(R.id.addManualSleepButton).setOnClickListener {
+            val sleepText = manualSleepInput.text.toString()
+            if (sleepText.isNotEmpty()) {
+                val minutes = sleepText.toIntOrNull()
+                if (minutes != null && minutes > 0) {
+                    lifecycleScope.launch {
+                        checkPermissions()
+                        healthWriter.writeManualSleep(minutes)
+                        runOnUiThread { 
+                            statusText.text = "😴 $minutes Min. Schlaf manuell hinzugefügt"
+                            manualSleepInput.text.clear()
+                        }
+                    }
+                } else {
+                    Toast.makeText(this, "Ungültige Minutenzahl", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
