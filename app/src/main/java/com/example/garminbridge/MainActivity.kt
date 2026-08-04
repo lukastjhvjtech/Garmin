@@ -35,7 +35,6 @@ class MainActivity : AppCompatActivity() {
         HealthPermission.getWritePermission(StepsRecord::class),
         HealthPermission.getWritePermission(SleepSessionRecord::class),
         HealthPermission.getWritePermission(RestingHeartRateRecord::class),
-        HealthPermission.getWritePermission(StressRecord::class),
         HealthPermission.getWritePermission(OxygenSaturationRecord::class),
         HealthPermission.getWritePermission(RespiratoryRateRecord::class),
         HealthPermission.getWritePermission(FloorsClimbedRecord::class),
@@ -47,8 +46,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webView)
-        statusText = findViewById(R.id.statusText)        val loginButton: Button = findViewById(R.id.loginButton)
-        val syncAllButton: Button = findViewById(R.id.syncAllButton)
+        statusText = findViewById(R.id.statusText)
+        val loginButton: Button = findViewById(R.id.loginButton)        val syncAllButton: Button = findViewById(R.id.syncAllButton)
         val syncStepsButton: Button = findViewById(R.id.syncStepsButton)
         val syncSleepButton: Button = findViewById(R.id.syncSleepButton)
         val syncHeartRateButton: Button = findViewById(R.id.syncHeartRateButton)
@@ -96,8 +95,8 @@ class MainActivity : AppCompatActivity() {
                 else -> GarminEndpoints.dailySummaryUrl(today)
             }
             webView.loadUrl(url)
-        }    }
-
+        }
+    }
     private suspend fun checkAndRequestPermissions() {
         try {
             val client = HealthConnectClient.getOrCreate(this)
@@ -145,8 +144,8 @@ class MainActivity : AppCompatActivity() {
             try {
                 when {
                     syncType == "steps" || syncType == "all" -> {
-                        val steps = GarminDataParser.extractSteps(json)                        if (steps != null) {
-                            healthWriter.writeSteps(steps)
+                        val steps = GarminDataParser.extractSteps(json)
+                        if (steps != null) {                            healthWriter.writeSteps(steps)
                             runOnUiThread { statusText.text = "✅ $steps Schritte" }
                         }
                     }
@@ -162,13 +161,6 @@ class MainActivity : AppCompatActivity() {
                         if (hr != null) {
                             healthWriter.writeHeartRate(hr)
                             runOnUiThread { statusText.text = "❤️ ${hr.restingHeartRate} bpm" }
-                        }
-                    }
-                    syncType == "stress" || syncType == "all" -> {
-                        val stress = GarminDataParser.extractStress(json)
-                        if (stress != null) {
-                            healthWriter.writeStress(stress)
-                            runOnUiThread { statusText.text = "😰 Stress: ${stress.avgStress}" }
                         }
                     }
                     syncType == "calories" || syncType == "all" -> {
@@ -194,7 +186,8 @@ class MainActivity : AppCompatActivity() {
                     if (resp != null) healthWriter.writeRespiration(resp)
                 }
             } catch (e: Exception) {
-                runOnUiThread { statusText.text = "❌ Fehler: ${e.message}" }                Log.e(TAG, "Sync-Fehler", e)
+                runOnUiThread { statusText.text = "❌ Fehler: ${e.message}" }
+                Log.e(TAG, "Sync-Fehler", e)
             }
         }
     }
