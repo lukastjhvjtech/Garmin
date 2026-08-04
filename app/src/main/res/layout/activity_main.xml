@@ -24,13 +24,27 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="1. Login" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp">
 
         <Button
-            android:id="@+id/syncButton"
+            android:id="@+id/syncStepsButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="2. Sync heute" />
+            android:text="2. Schritte sync" />
+
+        <Button
+            android:id="@+id/syncSleepButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="3. Schlaf sync" />
     </LinearLayout>
 
     <WebView
