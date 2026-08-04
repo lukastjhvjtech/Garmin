@@ -51,6 +51,26 @@
             android:layout_height="wrap_content"
             android:text="Addieren" />
     </LinearLayout>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="8dp">
+        
+        <TimePicker
+            android:id="@+id/syncTimePicker"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:timePickerMode="spinner" />
+        
+        <Button
+            android:id="@+id/setAutoSyncButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto-Sync\nsetzen" />
+    </LinearLayout>
 
     <WebView
         android:id="@+id/webView"
