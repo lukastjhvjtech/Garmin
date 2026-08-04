@@ -56,4 +56,21 @@ class HealthConnectWriter(private val context: Context) {
         prefs.edit().putBoolean(key, true).apply()
         Log.d("GarminBridge", "Sleep: ${data.totalSleepMinutes} min")
     }
+    
+    suspend fun writeManualSleep(minutes: Int) {
+        val now = Instant.now()
+        val offset = ZoneId.systemDefault().rules.getOffset(now)
+        val start = now.minusSeconds((minutes * 60).toLong())
+        
+        val record = SleepSessionRecord(
+            startTime = start,
+            endTime = now,
+            startZoneOffset = offset,
+            endZoneOffset = offset,
+            stages = emptyList()
+        )
+        
+        client.insertRecords(listOf(record))
+        Log.d("GarminBridge", "Manual sleep: $minutes min")
+    }
 }
