@@ -1,141 +1,177 @@
 package com.example.garminbridge
 
-import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
 import android.util.Log
+import android.webkit.CookieManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
-import androidx.health.connect.client.records.metadata.DataOrigin
-import java.time.Instant
+import androidx.lifecycle.lifecycleScope
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
+import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.ZoneId
 
-class HealthConnectWriter(private val context: Context) {
+class MainActivity : AppCompatActivity() {
 
-    private val client: HealthConnectClient by lazy {
-        HealthConnectClient.getOrCreate(context)
+    companion object {
+        private const val TAG = "GarminBridge"
     }
 
-    private val prefs =
-        context.getSharedPreferences("garmin_bridge", Context.MODE_PRIVATE)
+    private lateinit var webView: WebView
+    private lateinit var statusText: TextView
+    private lateinit var healthWriter: HealthConnectWriter
+    private var waitingForSleep = false
 
-    suspend fun writeSteps(currentTotal: Long) {
-        if (HealthConnectClient.getSdkStatus(context) != HealthConnectClient.SDK_AVAILABLE) {
-            throw IllegalStateException(
-                "Health Connect ist nicht verfügbar. Bitte die Health-Connect-App aus dem Play Store installieren."
-            )
+    private val requiredPermissions = setOf(
+        HealthPermission.getWritePermission(StepsRecord::class),
+        HealthPermission.getWritePermission(SleepSessionRecord::class)
+    )
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        webView = findViewById(R.id.webView)
+        statusText = findViewById(R.id.statusText)
+        val loginButton: Button = findViewById(R.id.loginButton)
+        val syncStepsButton: Button = findViewById(R.id.syncStepsButton)
+        val syncSleepButton: Button = findViewById(R.id.syncSleepButton)
+
+        healthWriter = HealthConnectWriter(this)
+        setupWebView()
+
+        loginButton.setOnClickListener {
+            statusText.text = "🔐 Bitte bei Garmin einloggen..."
+            webView.loadUrl(GarminEndpoints.START_URL)
         }
 
-        val todayKey = "last_steps_" + LocalDate.now().toString()
-        val lastTotal = prefs.getLong(todayKey, 0L)
-        val delta = currentTotal - lastTotal
-
-        if (delta <= 0) {
-            Log.d("GarminBridge", "Keine neuen Schritte (delta=$delta)")
-            return
+        syncStepsButton.setOnClickListener {
+            lifecycleScope.launch {
+                checkAndRequestPermissions()
+                waitingForSleep = false
+                statusText.text = "🔄 Lade Tages-Daten..."
+                val today = LocalDate.now().toString()
+                webView.loadUrl(GarminEndpoints.dailySummaryUrl(today))
+            }
         }
 
-        val now = Instant.now()
-        val zone: ZoneId = ZoneId.systemDefault()
-        val zoneOffset = zone.rules.getOffset(now)
-
-        val lastWriteMillis = prefs.getLong("last_write_millis", now.toEpochMilli() - 3_600_000)
-        var startTime = Instant.ofEpochMilli(lastWriteMillis)
-        if (!startTime.isBefore(now)) {
-            startTime = now.minusSeconds(60)
+        syncSleepButton.setOnClickListener {
+            lifecycleScope.launch {
+                checkAndRequestPermissions()
+                waitingForSleep = true
+                statusText.text = "😴 Lade Schlaf-Daten..."
+                val today = LocalDate.now().toString()
+                webView.loadUrl(GarminEndpoints.sleepUrl(today))
+            }
         }
-
-        val record = StepsRecord(
-            count = delta,
-            startTime = startTime,            endTime = now,
-            startZoneOffset = zoneOffset,
-            endZoneOffset = zoneOffset
-        )
-
-        client.insertRecords(listOf(record))
-
-        prefs.edit()
-            .putLong(todayKey, currentTotal)
-            .putLong("last_write_millis", now.toEpochMilli())
-            .apply()
-
-        Log.d("GarminBridge", "Delta $delta Schritte geschrieben (Gesamt $currentTotal)")
     }
 
-    suspend fun writeSleep(sleepData: SleepData) {
-        if (HealthConnectClient.getSdkStatus(context) != HealthConnectClient.SDK_AVAILABLE) {
-            throw IllegalStateException(
-                "Health Connect ist nicht verfügbar. Bitte die Health-Connect-App aus dem Play Store installieren."
+    private suspend fun checkAndRequestPermissions() {
+        try {
+            val client = HealthConnectClient.getOrCreate(this)
+            val granted = client.permissionController.getGrantedPermissions()
+            if (granted.containsAll(requiredPermissions)) {
+                Log.d(TAG, "Health-Connect-Rechte bereits erteilt")
+            } else {
+                val intent = Intent().apply {
+                    action = "androidx.health.ACTION_HEALTH_CONNECT_SETTINGS"
+                    data = Uri.parse("package:$packageName")
+                }
+                try {
+                    startActivity(intent)
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Bitte 'Schritte' UND 'Schlaf' aktivieren!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } catch (e: Exception) {                    Log.e(TAG, "Konnte Health Connect nicht öffnen", e)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Permission-Check fehlgeschlagen", e)
+        }
+    }
+
+    private fun setupWebView() {
+        webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.userAgentString =
+            "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36"
+
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                GarminJsHook.SCRIPT,
+                setOf("https://connect.garmin.com")
             )
+            Log.d(TAG, "JS-Hook injiziert")
         }
 
-        // Verhindere doppelte Schreibvorgänge für dieselbe Nacht
-        val todayKey = "last_sleep_" + LocalDate.now().toString()
-        if (prefs.getBoolean(todayKey, false)) {
-            Log.d("GarminBridge", "Schlaf für heute schon geschrieben")
-            return
-        }
+        webView.addJavascriptInterface(object {
+            @android.webkit.JavascriptInterface
+            fun onGarminData(url: String, json: String) {
+                Log.d(TAG, "=== Daten von: $url")
+                Log.d(TAG, "RAW JSON: " + json.take(800))
+                handleGarminData(url, json)
+            }
+        }, "GarminBridge")
 
-        val startInstant = Instant.ofEpochMilli(sleepData.sleepStartMillis)
-        val endInstant = Instant.ofEpochMilli(sleepData.sleepEndMillis)
-        val zone: ZoneId = ZoneId.systemDefault()
-        val startOffset = zone.rules.getOffset(startInstant)
-        val endOffset = zone.rules.getOffset(endInstant)
+        webView.webViewClient = WebViewClient()
+    }
 
-        // Schlafphasen als Stages hinzufügen
-        val stages = mutableListOf<SleepSessionRecord.Stage>()
-        var currentMillis = startInstant.toEpochMilli()
-        
-        if (sleepData.lightSleepMinutes > 0) {
-            val stageEnd = currentMillis + (sleepData.lightSleepMinutes * 60 * 1000)
-            stages.add(SleepSessionRecord.Stage(
-                Instant.ofEpochMilli(currentMillis),
-                Instant.ofEpochMilli(stageEnd),
-                SleepSessionRecord.STAGE_TYPE_LIGHT
-            ))
-            currentMillis = stageEnd
-        }
-        
-        if (sleepData.deepSleepMinutes > 0) {            val stageEnd = currentMillis + (sleepData.deepSleepMinutes * 60 * 1000)
-            stages.add(SleepSessionRecord.Stage(
-                Instant.ofEpochMilli(currentMillis),
-                Instant.ofEpochMilli(stageEnd),
-                SleepSessionRecord.STAGE_TYPE_DEEP
-            ))
-            currentMillis = stageEnd
+    private fun handleGarminData(url: String, json: String) {
+        // Schritte verarbeiten
+        if (!waitingForSleep) {
+            val steps = GarminDataParser.extractSteps(json)
+            if (steps != null && steps > 0) {
+                lifecycleScope.launch {
+                    try {
+                        healthWriter.writeSteps(steps)
+                        runOnUiThread {
+                            statusText.text = "✅ $steps Schritte verarbeitet"
+                            Toast.makeText(this@MainActivity, "Sync OK: $steps Schritte", Toast.LENGTH_SHORT).show()
+                        }                    } catch (e: Exception) {
+                        runOnUiThread { statusText.text = "❌ Fehler: ${e.message}" }
+                        Log.e(TAG, "Schreibfehler", e)
+                    }
+                }
+                return
+            }
         }
         
-        if (sleepData.remSleepMinutes > 0) {
-            val stageEnd = currentMillis + (sleepData.remSleepMinutes * 60 * 1000)
-            stages.add(SleepSessionRecord.Stage(
-                Instant.ofEpochMilli(currentMillis),
-                Instant.ofEpochMilli(stageEnd),
-                SleepSessionRecord.STAGE_TYPE_REM
-            ))
-            currentMillis = stageEnd
+        // Schlaf verarbeiten
+        if (waitingForSleep) {
+            val sleep = GarminDataParser.extractSleep(json)
+            if (sleep != null) {
+                lifecycleScope.launch {
+                    try {
+                        healthWriter.writeSleep(sleep)
+                        runOnUiThread {
+                            statusText.text = "😴 ${sleep.totalSleepMinutes} Min. Schlaf geschrieben"
+                            Toast.makeText(this@MainActivity, "Schlaf OK: ${sleep.totalSleepMinutes} Min.", Toast.LENGTH_SHORT).show()
+                        }
+                        waitingForSleep = false
+                    } catch (e: Exception) {
+                        runOnUiThread { statusText.text = "❌ Fehler: ${e.message}" }
+                        Log.e(TAG, "Schlaf-Schreibfehler", e)
+                    }
+                }
+            }
         }
-        
-        if (sleepData.awakeMinutes > 0) {
-            val stageEnd = currentMillis + (sleepData.awakeMinutes * 60 * 1000)
-            stages.add(SleepSessionRecord.Stage(
-                Instant.ofEpochMilli(currentMillis),
-                Instant.ofEpochMilli(stageEnd),
-                SleepSessionRecord.STAGE_TYPE_AWAKE
-            ))
-        }
-
-        val record = SleepSessionRecord(
-            startTime = startInstant,
-            endTime = endInstant,
-            startZoneOffset = startOffset,
-            endZoneOffset = endOffset,
-            stages = stages
-        )
-
-        client.insertRecords(listOf(record))
-
-        prefs.edit().putBoolean(todayKey, true).apply()
-
-        Log.d("GarminBridge", "Schlaf geschrieben: ${sleepData.totalSleepMinutes} Minuten")
     }
 }
