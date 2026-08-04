@@ -1,82 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/statusText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:textSize="16sp"
+        android:text="Garmin Health Bridge" />
 
-        <TextView
-            android:id="@+id/statusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:textSize="16sp"
-            android:text="Garmin Health Bridge"
-            android:gravity="center" />
+    <Button
+        android:id="@+id/loginButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="1. Login" />
 
-        <Button
-            android:id="@+id/loginButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="1. Login" />
+    <Button
+        android:id="@+id/syncStepsButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="2. Schritte syncen" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:text="Daten synchronisieren:"
-            android:textStyle="bold" />
+    <Button
+        android:id="@+id/syncSleepButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="3. Schlaf syncen" />
 
-        <Button
-            android:id="@+id/syncAllButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Alle Daten syncen" />
-
-        <Button
-            android:id="@+id/syncStepsButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Schritte" />
-
-        <Button
-            android:id="@+id/syncSleepButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Schlaf" />
-
-        <Button
-            android:id="@+id/syncHeartRateButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Herzfrequenz" />
-
-        <Button
-            android:id="@+id/syncStressButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Stress" />
-
-        <Button
-            android:id="@+id/syncCaloriesButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Kalorien" />
-
-        <Button
-            android:id="@+id/syncSpO2Button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SpO2" />
-
-        <WebView
-            android:id="@+id/webView"
-            android:layout_width="match_parent"
-            android:layout_height="300dp"
-            android:layout_marginTop="16dp" />
-    </LinearLayout>
-</ScrollView>
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="16dp" />
+</LinearLayout>
