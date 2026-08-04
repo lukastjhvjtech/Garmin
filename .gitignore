@@ -1,86 +1,50 @@
-```kotlin
-# Kotlin/Android specific
+```
+# Compiled and build artifacts
 *.class
+*.dex
+*.so
+*.aar
+*.apk
 *.jar
-*.war
-*.ear
-*.zip
-*.tar
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.7z
-*.rar
-*.gz
-*.bz2
-*.xz
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-
-# Android build outputs
+*.o
+*.obj
+*.out
 build/
-.gradle/
-target/
+.intermediates/
+.externalNativeBuild/
 
 # Dependencies
+.gradle/
 node_modules/
-vendor/bundle
-vendor/cache
-vendor/gems
-vendor/ruby
+vendor/
 
-# Logs
+# Logs and temp files
 *.log
-.log
+*.tmp
+*.swp
 
-# Environment variables
+# Environment
 .env
 .env.local
-.env.*
-!.env.example
+*.env.*
 
-# IDE files
+# Editors
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
+*.iml
+*.iws
+*.ipr
+
+# System files
 .DS_Store
 Thumbs.db
-
-# Python artifacts (if any Python in project)
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
 
 # Coverage reports
 coverage/
 htmlcov/
-.coverage
+*.coverage
 
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.backup
-
-# Compiled binary files
-*.exe
-*.dll
-*.so
-*.a
-*.o
-*.obj
-*.out
+# Android specific
+*.keystore
+local.properties
 ```
