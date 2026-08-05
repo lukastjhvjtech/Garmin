@@ -1,7 +1,15 @@
-```gitignore
-# Build artifacts
+```
+# Compiled and build artifacts
+*.class
+*.dex
+*.so
+*.aar
+*.apk
+*.jar
+obj/
 build/
-dist/
+.externalNativeBuild/
+.cxx/
 
 # Dependencies
 node_modules/
@@ -10,48 +18,22 @@ venv/
 __pycache__/
 *.egg-info/
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
+# Logs and temp files
+*.log
+*.tmp
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Logs and temp files
-*.log
-*.tmp
-*.bak
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
 
-# OS files
+# OS generated files
 .DS_Store
 Thumbs.db
-
-# Coverage reports
-coverage/
-htmlcov/
-*.coverage
-
-# Compiled files
-*.pyc
-*.class
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
-
-# Package manager caches
-.npm/
-.yarn/
-.pip/
-.mypy_cache/
-.pytest_cache/
-.gradle/
-target/
 ```
