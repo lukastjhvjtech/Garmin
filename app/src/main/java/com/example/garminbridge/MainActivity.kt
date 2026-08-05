@@ -11,6 +11,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.webkit.CookieManager
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -20,16 +22,22 @@ import android.widget.TextView
 import android.widget.TimePicker
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.Navigation
+import androidx.navigation.ui.NavigationUI
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
@@ -37,7 +45,9 @@ import java.time.Instant
 import java.time.LocalTime
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var webView: WebView
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navigationView: NavigationView
+    private lateinit var toolbar: Toolbar
     private lateinit var statusText: TextView
     private lateinit var healthWriter: HealthConnectWriter
     private lateinit var manualStepsInput: EditText
@@ -55,7 +65,49 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         
-        webView = findViewById(R.id.webView)
+        // Toolbar als ActionBar setzen
+        toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        
+        // Drawer Layout setup
+        drawerLayout = findViewById(R.id.drawerLayout)
+        navigationView = findViewById(R.id.navigationView)
+        
+        // Burger-Menü Button zur Toolbar hinzufügen
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_menu)
+        
+        // Navigation Menü setup
+        NavigationUI.setupWithNavController(navigationView, Navigation.findNavController(this, R.id.nav_host_fragment))
+        
+        drawerLayout.addDrawerListener(object : DrawerLayout.SimpleDrawerListener() {
+            override fun onDrawerOpened(drawerView: android.view.View) {
+                super.onDrawerOpened(drawerView)
+            }
+            
+            override fun onDrawerClosed(drawerView: android.view.View) {
+                super.onDrawerClosed(drawerView)
+            }
+        })
+        
+        navigationView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_home -> {
+                    // Home Aktion - schließe Drawer
+                    drawerLayout.closeDrawers()
+                    true
+                }
+                R.id.nav_login -> {
+                    // Login Aktion - starte WebView Activity
+                    val intent = Intent(this, GarminLoginActivity::class.java)
+                    startActivity(intent)
+                    drawerLayout.closeDrawers()
+                    true
+                }
+                else -> false
+            }
+        }
+        
         statusText = findViewById(R.id.statusText)
         healthWriter = HealthConnectWriter(this)
         manualStepsInput = findViewById(R.id.manualStepsInput)
@@ -67,40 +119,19 @@ class MainActivity : AppCompatActivity() {
         syncTimePicker.setIs24HourView(true)
         
         createNotificationChannel()
-        setupWebView()
-        
-        findViewById<Button>(R.id.loginButton).setOnClickListener {
-            statusText.text = "🔐 Login..."
-            webView.loadUrl(GarminEndpoints.START_URL)
-        }
         
         findViewById<Button>(R.id.syncStepsButton).setOnClickListener {
             syncType = "steps"
-            loadPage("daily")
+            startGarminLogin("daily")
         }
         
         findViewById<Button>(R.id.syncSleepButton).setOnClickListener {
             syncType = "sleep"
-            loadPage("sleep")
+            startGarminLogin("sleep")
         }
         
         findViewById<Button>(R.id.addManualStepsButton).setOnClickListener {
-            val stepsText = manualStepsInput.text.toString()
-            if (stepsText.isNotEmpty()) {
-                val steps = stepsText.toLongOrNull()
-                if (steps != null && steps > 0) {
-                    lifecycleScope.launch {
-                        checkPermissions()
-                        healthWriter.writeSteps(steps)
-                        runOnUiThread { 
-                            statusText.text = "✅ $steps Schritte manuell hinzugefügt"
-                            manualStepsInput.text.clear()
-                        }
-                    }
-                } else {
-                    Toast.makeText(this, "Ungültige Schrittzahl", Toast.LENGTH_SHORT).show()
-                }
-            }
+            addManualSteps()
         }
         
         findViewById<Button>(R.id.setAutoSyncButton).setOnClickListener {
@@ -108,6 +139,64 @@ class MainActivity : AppCompatActivity() {
         }
         
         requestNotificationPermission()
+    }
+    
+    private fun addManualSteps() {
+        val stepsText = manualStepsInput.text.toString()
+        if (stepsText.isEmpty()) {
+            Toast.makeText(this, "Bitte eine Schrittzahl eingeben", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        try {
+            val steps = stepsText.toLong()
+            
+            // Validierung: Positive Zahl und im gültigen Bereich
+            if (steps <= 0) {
+                Toast.makeText(this, "Schrittzahl muss größer als 0 sein", Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            // Maximalwert prüfen (Long.MAX_VALUE ist ca. 9 Quintillionen)
+            val maxReasonableSteps = 1_000_000_000L // 1 Milliarde als vernünftiges Maximum
+            if (steps > maxReasonableSteps) {
+                Toast.makeText(
+                    this, 
+                    "Ungültige Schrittzahl. Bitte geben Sie einen Wert unter 1 Milliarde ein.", 
+                    Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+            
+            lifecycleScope.launch {
+                try {
+                    checkPermissions()
+                    healthWriter.writeSteps(steps)
+                    runOnUiThread { 
+                        statusText.text = "✅ $steps Schritte manuell hinzugefügt"
+                        manualStepsInput.text.clear()
+                        Toast.makeText(this@MainActivity, "$steps Schritte hinzugefügt!", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        statusText.text = "❌ Fehler beim Schreiben: ${e.message}"
+                        Toast.makeText(this@MainActivity, "Fehler: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                    Log.e("GarminBridge", "Fehler beim Schreiben der Schritte", e)
+                }
+            }
+        } catch (e: NumberFormatException) {
+            Toast.makeText(this, "Bitte eine gültige Zahl eingeben", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Unerwarteter Fehler: ${e.message}", Toast.LENGTH_SHORT).show()
+            Log.e("GarminBridge", "Unerwarteter Fehler", e)
+        }
+    }
+    
+    private fun startGarminLogin(type: String) {
+        val intent = Intent(this, GarminLoginActivity::class.java)
+        intent.putExtra("sync_type", type)
+        startActivity(intent)
     }
     
     private fun createNotificationChannel() {
