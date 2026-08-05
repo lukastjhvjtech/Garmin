@@ -11,71 +11,115 @@
         android:layout_height="wrap_content"
         android:padding="16dp"
         android:textSize="16sp"
+        android:textStyle="bold"
         android:text="Garmin Health Bridge" />
 
-    <Button
-        android:id="@+id/loginButton"
+    <!-- Hauptmenü -->
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="1. Login" />
+        android:layout_marginBottom="16dp">
 
-    <Button
-        android:id="@+id/syncStepsButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="2. Schritte syncen" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-    <Button
-        android:id="@+id/syncSleepButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="3. Schlaf syncen" />
-    
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="8dp">
-        
-        <EditText
-            android:id="@+id/manualStepsInput"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:inputType="number"
-            android:hint="Schritte manuell" />
-        
-        <Button
-            android:id="@+id/addManualStepsButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Addieren" />
-    </LinearLayout>
-    
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="8dp">
-        
-        <TimePicker
-            android:id="@+id/syncTimePicker"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:timePickerMode="spinner" />
-        
-        <Button
-            android:id="@+id/setAutoSyncButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Auto-Sync\nsetzen" />
-    </LinearLayout>
+            <!-- Synchronisation Menü -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📊 Synchronisation"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp" />
+
+            <Button
+                android:id="@+id/loginButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🔐 Login" />
+
+            <Button
+                android:id="@+id/syncStepsButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="👟 Schritte syncen" />
+
+            <Button
+                android:id="@+id/syncSleepButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="😴 Schlaf syncen" />
+
+            <!-- Manuelle Eingabe Menü -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="✏️ Manuelle Eingabe"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:paddingTop="16dp"
+                android:paddingBottom="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/manualStepsInput"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:inputType="number"
+                    android:hint="Schritte" />
+
+                <Button
+                    android:id="@+id/addManualStepsButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="➕" />
+            </LinearLayout>
+
+            <!-- Einstellungen Menü -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⚙️ Einstellungen"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:paddingTop="16dp"
+                android:paddingBottom="4dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Auto-Sync Uhrzeit:"
+                android:textSize="12sp"
+                android:paddingBottom="4dp" />
+
+            <TimePicker
+                android:id="@+id/syncTimePicker"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:timePickerMode="spinner"
+                android:scaleX="0.7"
+                android:scaleY="0.7" />
+
+            <Button
+                android:id="@+id/setAutoSyncButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⏰ Auto-Sync aktivieren" />
+        </LinearLayout>
+    </ScrollView>
 
     <WebView
         android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="16dp" />
+        android:visibility="gone" />
 </LinearLayout>
